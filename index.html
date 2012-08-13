@@ -12,7 +12,7 @@
    var world;
 
    var G = 1;
-   var N = 30;
+   var N = 100;
 
    var bods = [];
    
@@ -31,7 +31,7 @@
       
       world = new b2World(
             new b2Vec2(0, 0)    //gravity
-         ,  true                 //allow sleep
+         ,  false                 //allow sleep
       );
       
       var fixDef = new b2FixtureDef;
@@ -77,17 +77,27 @@
          if(Math.random() > 0.5) {
             fixDef.shape = new b2PolygonShape;
             fixDef.shape.SetAsBox(
-                  Math.random() + 0.1 //half width
-               ,  Math.random() + 0.1 //half height
+                  Math.random()*0.3 + 0.1 //half width
+               ,  Math.random()*0.3 + 0.1 //half height
             );
          } else {
             fixDef.shape = new b2CircleShape(
-               Math.random() + 0.1 //radius
+               Math.random()*0.3 + 0.1 //radius
             );
          }
          bodyDef.position.x = 5 + Math.random() * 10;
          bodyDef.position.y = 5 + Math.random() * 10;
          var wb = world.CreateBody(bodyDef).CreateFixture(fixDef);
+         var xvel,yvel;
+         if (wb.GetBody().GetPosition().x > 10) {
+            xvel = (Math.random()-0.5)*4;
+            yvel = -Math.random()*2;
+         } else {
+            xvel = (Math.random()-0.5)*4;
+            yvel = Math.random()*2;
+         }
+         wb.GetBody().SetLinearVelocity({ x: xvel, 
+                                          y: yvel    });
          bods.push( wb.GetBody() );
       }
       
