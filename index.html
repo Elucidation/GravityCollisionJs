@@ -10,6 +10,11 @@
 <script type="text/javascript" src="Box2dWeb-2.1.a.3.min.js"></script>
 <script type="text/javascript">
    var world;
+
+   var G = 1;
+   var N = 30;
+
+   var bods = [];
    
    function init() {
       var   b2Vec2 = Box2D.Common.Math.b2Vec2
@@ -25,7 +30,7 @@
          ;
       
       world = new b2World(
-            new b2Vec2(2, 0)    //gravity
+            new b2Vec2(0, 0)    //gravity
          ,  true                 //allow sleep
       );
       
@@ -68,7 +73,7 @@
       
       //create some objects
       bodyDef.type = b2Body.b2_dynamicBody;
-      for(var i = 0; i < 10; ++i) {
+      for(var i = 0; i < N; ++i) {
          if(Math.random() > 0.5) {
             fixDef.shape = new b2PolygonShape;
             fixDef.shape.SetAsBox(
@@ -82,7 +87,8 @@
          }
          bodyDef.position.x = 5 + Math.random() * 10;
          bodyDef.position.y = 5 + Math.random() * 10;
-         world.CreateBody(bodyDef).CreateFixture(fixDef);
+         var wb = world.CreateBody(bodyDef).CreateFixture(fixDef);
+         bods.push( wb.GetBody() );
       }
       
       //setup debug draw
@@ -96,8 +102,50 @@
       
       window.setInterval(update, 1000 / 60);
    };
+
+   function doForces() {
+      for (var i = bods.length - 1; i >= 0; i--) {
+         for (var j = i-1; j >= 0; j--) {
+            doForce(bods[i],bods[j]);
+            //console.log("Force "+i+" <-> "+j);
+         };
+
+      };
+   }
+
+   function doForce(b1,b2) {
+      var x = b1.GetPosition().x;
+      var y = b1.GetPosition().y;
+      var m = b1.GetMass(); 
+      
+      var x2 = b2.GetPosition().x;
+      var y2 = b2.GetPosition().y;
+      var m2 = b2.GetMass();
+
+      var dx = x2-x;
+      var dy = y2-y;
+      var r2 = dx*dx+dy*dy;
+      var r = Math.sqrt(r2);
+
+      var f = G*m*m2/r2
+      var fx = dx/r * f;
+      var fy = dy/r * f;
+
+      var fvec1 = {x: fx, y: fy};
+      var fvec2 = {x: -fx, y: -fy};
+
+      b1.ApplyForce(fvec1, b1.GetPosition() );
+      b2.ApplyForce(fvec2, b2.GetPosition() );
+   }
+
+   function testForce(i,x,y) {
+      var b = bods[i];
+      var fv = {x:x,y:y};
+      b.ApplyForce( fv , b.GetPosition() );
+   }
    
    function update() {
+      doForces();
       world.Step(
             1 / 60   //frame-rate
          ,  10       //velocity iterations
