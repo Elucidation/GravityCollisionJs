@@ -34,10 +34,12 @@
             ,  b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef
             ;
       
-      var G = 1;
+      var G = 3;
       var N = 50;
-      var DISTANCE_FACTOR = 1.2; // gravitational distance factor, 2 is reality, less means gravity is stronger further away (don't set to 0)
+      var DISTANCE_FACTOR = 1.3; // gravitational distance factor, 2 is reality, less means gravity is stronger further away (don't set to 0)
       var initVel = 2; // Initial rand velocity for bodies
+      var CENTER_MASS = 0.1; // Mass of center body
+      var CENTER_RADIUS = 0.2;
       var bods = [];
       var ctx = document.getElementById("canvas");
 
@@ -49,7 +51,7 @@
       );
 
       var SCALE = 30.0;
-      var MOUSE_PULL_FORCE = 10.0;
+      var MOUSE_PULL_FORCE = 50.0;
       
       var fixDef = new b2FixtureDef;
       fixDef.density = 1.0;
@@ -66,8 +68,6 @@
       var cHeight = ctx.height / SCALE;
 
       var OutsideOffset = 10;
-
-      console.log("w/h = "+cWidth+", "+cHeight);
 
       // Bottom
       bodyDef.position.x = cWidth/2;
@@ -100,6 +100,8 @@
       //create some objects
       bodyDef.type = b2Body.b2_dynamicBody;
       for(var i = 0; i < N; ++i) {
+
+         // Size
          var s;
          if (Math.random() > 0.92) {
             s = 2;
@@ -118,32 +120,42 @@
                Math.random()*s + 0.1 //radius
             );
          }
+
+         // Position
          bodyDef.position.x = halfWallThick + s + (Math.random()*cWidth-2*(halfWallThick+s) );
          bodyDef.position.y = halfWallThick + s + (Math.random()*cHeight-2*(halfWallThick+s) );
          var wb = world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+
+         // Velocity 
          var xvel,yvel;
-         if (wb.GetBody().GetPosition().x > 10) {
-            xvel = (Math.random()-0.5)*initVel;
-            yvel = -Math.random()*initVel;
-         } else {
-            xvel = (Math.random()-0.5)*initVel;
-            yvel = Math.random()*initVel;
-         }
-         wb.GetBody().SetLinearVelocity({ x: xvel, 
-                                          y: yvel    });
+         // if (wb.GetBody().GetPosition().x > 10) {
+         //    xvel = (Math.random()-0.5)*initVel;
+         //    yvel = -Math.random()*initVel;
+         // } else {
+         //    xvel = (Math.random()-0.5)*initVel;
+         //    yvel = Math.random()*initVel;
+         // }
+         var dvec = wb.GetBody().GetPosition().Copy();
+         dvec.Subtract(new b2Vec2(cWidth/2,cHeight/2));
+         var d = dvec.Length();
+
+         var v_orbit = Math.sqrt(   CENTER_MASS*CENTER_MASS*G / ( (wb.GetBody().GetMass()+CENTER_MASS)*d )   ) * DISTANCE_FACTOR;
+
+         dvec.CrossVF(1.0/d * v_orbit);
+
+         wb.GetBody().SetLinearVelocity(dvec);
          bods.push( wb.GetBody() );
       }
 
       // Create center planet
 
-      fixDef.shape = new b2CircleShape( 5 );
+      fixDef.shape = new b2CircleShape( CENTER_RADIUS );
       bodyDef.position.x = cWidth/2;
       bodyDef.position.y = cHeight/2;
       bodyDef.type = b2Body.b2_staticBody;
       var wb = world.CreateBody(bodyDef).CreateFixture(fixDef);
       bods.push( wb.GetBody() );
-
-      console.log(wb.GetBody().GetMass());
 
 
       // Mouse  
@@ -228,12 +240,12 @@
          var x = b1.GetPosition().x;
          var y = b1.GetPosition().y;
          var m = b1.GetMass(); 
-         if (m == 0) { m = 5;}
+         if (m == 0) { m = CENTER_MASS;}
          
          var x2 = b2.GetPosition().x;
          var y2 = b2.GetPosition().y;
          var m2 = b2.GetMass();
-         if (m2 == 0) { m2 = 5;}
+         if (m2 == 0) { m2 = CENTER_MASS;}
 
          var dx = x2-x;
          var dy = y2-y;
