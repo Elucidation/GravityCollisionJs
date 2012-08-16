@@ -1,6 +1,6 @@
 <html>
 <head>
-   <title>Box2dWeb example</title>
+   <title>Gravity Collision</title>
    <style type="text/css">
       html, body {
         width:  100%;
@@ -42,6 +42,11 @@
       var CENTER_RADIUS = 0.2;
       var bods = [];
       var ctx = document.getElementById("canvas");
+      var ctx2d = ctx.getContext("2d");
+
+
+      var TIMESTEP = 1 / 60.0;
+      var FRAMERATE = TIMESTEP;
 
       resize(ctx);
 
@@ -305,12 +310,14 @@
          }
 
          world.Step(
-               1 / 60   //frame-rate
+               FRAMERATE   //frame-rate
             ,  8       //velocity iterations
             ,  3       //position iterations
          );
 
          world.DrawDebugData();
+         ctx2d.fillStyle = '#f00';
+         ctx2d.fillText("Spacebar for bullet time!      DT:"+FRAMERATE.toFixed(5), 10,10);
          world.ClearForces();
       };
 
@@ -324,6 +331,23 @@
       world.SetDebugDraw(debugDraw);
       
       window.setInterval(update, 1000 / 60);
+
+
+      // Keyboard
+      window.addEventListener('keydown',doKeyDown,true);
+      
+
+      function doKeyDown(evt) {
+         switch (evt.keyCode) {
+            case 32:  /* Spacebar was pressed */
+            if (FRAMERATE < TIMESTEP) {
+               FRAMERATE = TIMESTEP
+            } else {
+               FRAMERATE = TIMESTEP*0.1;
+            }
+            break;
+         }
+      };
 
    }; // End Init
 
