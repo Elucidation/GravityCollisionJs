@@ -1,6 +1,13 @@
 <html>
 <head>
    <title>Box2dWeb example</title>
+   <style type="text/css">
+      html, body {
+        width:  100%;
+        height: 100%;
+        margin: 0px;
+      }
+   </style>
 </head>
 
 <body onload="init();">
@@ -28,13 +35,20 @@
             ;
       
       var G = 1;
-      var N = 100;
+      var N = 50;
+      var DISTANCE_FACTOR = 1.5; // gravitational distance factor, 2 is reality, less means gravity is stronger further away (don't set to 0)
       var bods = [];
+      var ctx = document.getElementById("canvas");
+
+      resize(ctx);
 
       var world = new b2World(
             new b2Vec2(0, 0)    //gravity
          ,  false                 //allow sleep
       );
+
+      var SCALE = 30.0;
+      var MOUSE_PULL_FORCE = 10.0;
       
       var fixDef = new b2FixtureDef;
       fixDef.density = 1.0;
@@ -46,58 +60,72 @@
       // Walls
       ////////////////////////////////////
       bodyDef.type = b2Body.b2_staticBody;
+      var halfWallThick = 0.5;
+      var cWidth = ctx.width / SCALE;
+      var cHeight = ctx.height / SCALE;
+
+      console.log("w/h = "+cWidth+", "+cHeight);
+
       // Bottom
-      bodyDef.position.x = 10;
-      bodyDef.position.y = 20;
+      bodyDef.position.x = cWidth/2;
+      bodyDef.position.y = cHeight;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(10, 0.1);
+      fixDef.shape.SetAsBox(cWidth/2, halfWallThick);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
 
       // Top
-      bodyDef.position.x = 10;
+      bodyDef.position.x = cWidth/2;
       bodyDef.position.y = 0;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(10, 0.1);
+      fixDef.shape.SetAsBox(cWidth/2, halfWallThick);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
 
       // Left
       bodyDef.position.x = 0;
-      bodyDef.position.y = 10;
+      bodyDef.position.y = cHeight/2;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(0.1, 10);
+      fixDef.shape.SetAsBox(halfWallThick, cHeight/2);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
 
       // Right
-      bodyDef.position.x = 20;
-      bodyDef.position.y = 10;
+      bodyDef.position.x = cWidth;
+      bodyDef.position.y = cHeight/2;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(0.1, 10);
+      fixDef.shape.SetAsBox(halfWallThick, cHeight/2);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
       
       //create some objects
       bodyDef.type = b2Body.b2_dynamicBody;
       for(var i = 0; i < N; ++i) {
-         if(Math.random() > 0.5) {
+         var s;
+         if (Math.random() > 0.92) {
+            s = 2;
+         } else {
+            s = 0.3;
+         }
+         
+         if(Math.random() > 0.7) {
             fixDef.shape = new b2PolygonShape;
             fixDef.shape.SetAsBox(
-                  Math.random()*0.3 + 0.1 //half width
-               ,  Math.random()*0.3 + 0.1 //half height
+                  Math.random()*s + 0.1 //half width
+               ,  Math.random()*s + 0.1 //half height
             );
          } else {
             fixDef.shape = new b2CircleShape(
-               Math.random()*0.3 + 0.1 //radius
+               Math.random()*s + 0.1 //radius
             );
          }
-         bodyDef.position.x = 5 + Math.random() * 10;
-         bodyDef.position.y = 5 + Math.random() * 10;
+         bodyDef.position.x = halfWallThick + s + (Math.random()*cWidth-2*(halfWallThick+s) );
+         bodyDef.position.y = halfWallThick + s + (Math.random()*cHeight-2*(halfWallThick+s) );
          var wb = world.CreateBody(bodyDef).CreateFixture(fixDef);
          var xvel,yvel;
+         var initVel = 0;
          if (wb.GetBody().GetPosition().x > 10) {
-            xvel = (Math.random()-0.5)*4;
-            yvel = -Math.random()*2;
+            xvel = (Math.random()-0.5)*initVel;
+            yvel = -Math.random()*initVel;
          } else {
-            xvel = (Math.random()-0.5)*4;
-            yvel = Math.random()*2;
+            xvel = (Math.random()-0.5)*initVel;
+            yvel = Math.random()*initVel;
          }
          wb.GetBody().SetLinearVelocity({ x: xvel, 
                                           y: yvel    });
@@ -176,17 +204,6 @@
          return {x: x, y: y};
       };
  
-      
-      //setup debug draw
-      var debugDraw = new b2DebugDraw();
-		debugDraw.SetSprite(canvas.getContext("2d"));
-		debugDraw.SetDrawScale(30.0);
-		debugDraw.SetFillAlpha(0.3);
-		debugDraw.SetLineThickness(1.0);
-		debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
-		world.SetDebugDraw(debugDraw);
-      
-      window.setInterval(update, 1000 / 60);
 
       function doForces() {
          for (var i = bods.length - 1; i >= 0; i--) {
@@ -209,7 +226,7 @@
          var r2 = dx*dx+dy*dy;
          var r = Math.sqrt(r2);
 
-         var f = G*m*m2/r2
+         var f = G*m*m2/Math.pow(r,DISTANCE_FACTOR);
          var fx = dx/r * f;
          var fy = dy/r * f;
 
@@ -225,6 +242,11 @@
          var fv = {x:x,y:y};
          b.ApplyForce( fv , b.GetPosition() );
       };
+
+      function resize(ctx) {
+         ctx.width = window.innerWidth;
+         ctx.height = window.innerHeight;
+      }
       
       function update() {
          
@@ -238,7 +260,7 @@
                md.bodyB = body;
                md.target.Set(mouseX, mouseY);
                md.collideConnected = true;
-               md.maxForce = 300.0 * body.GetMass();
+               md.maxForce = MOUSE_PULL_FORCE;// * body.GetMass();
                mouseJoint = world.CreateJoint(md);
                body.SetAwake(true);
             }
@@ -261,6 +283,17 @@
          world.DrawDebugData();
          world.ClearForces();
       };
+
+      //setup debug draw
+      var debugDraw = new b2DebugDraw();
+      debugDraw.SetSprite(canvas.getContext("2d"));
+      debugDraw.SetDrawScale(SCALE);
+      debugDraw.SetFillAlpha(0.3);
+      debugDraw.SetLineThickness(1.0);
+      debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+      world.SetDebugDraw(debugDraw);
+      
+      window.setInterval(update, 1000 / 60);
 
    }; // End Init
 
