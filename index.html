@@ -129,20 +129,23 @@
 
          // Velocity 
          var xvel,yvel;
-         // if (wb.GetBody().GetPosition().x > 10) {
-         //    xvel = (Math.random()-0.5)*initVel;
-         //    yvel = -Math.random()*initVel;
-         // } else {
-         //    xvel = (Math.random()-0.5)*initVel;
-         //    yvel = Math.random()*initVel;
-         // }
-         var dvec = wb.GetBody().GetPosition().Copy();
-         dvec.Subtract(new b2Vec2(cWidth/2,cHeight/2));
-         var d = dvec.Length();
+         if (wb.GetBody().GetPosition().x > 10) {
+            xvel = (Math.random()-0.5)*initVel;
+            yvel = -Math.random()*initVel;
+         } else {
+            xvel = (Math.random()-0.5)*initVel;
+            yvel = Math.random()*initVel;
+         }
+         var dvec = new b2Vec2(xvel,yvel);
 
-         var v_orbit = Math.sqrt(   CENTER_MASS*CENTER_MASS*G / ( (wb.GetBody().GetMass()+CENTER_MASS)*d )   ) * DISTANCE_FACTOR;
+         // Orbit about a center planet
+         // var dvec = wb.GetBody().GetPosition().Copy();
+         // dvec.Subtract(new b2Vec2(cWidth/2,cHeight/2));
+         // var d = dvec.Length();
 
-         dvec.CrossVF(1.0/d * v_orbit);
+         // var v_orbit = Math.sqrt(   CENTER_MASS*CENTER_MASS*G / ( (wb.GetBody().GetMass()+CENTER_MASS)*d )   ) * DISTANCE_FACTOR;
+
+         // dvec.CrossVF(1.0/d * v_orbit);
 
          wb.GetBody().SetLinearVelocity(dvec);
          bods.push( wb.GetBody() );
