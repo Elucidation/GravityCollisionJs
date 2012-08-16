@@ -278,12 +278,6 @@
       }
       
       function update() {
-         
-         world.Step(
-               1 / 120   //frame-rate
-            ,  10       //velocity iterations
-            ,  10       //position iterations
-         );
 
          doForces();
 
@@ -311,10 +305,11 @@
          }
 
          world.Step(
-               1 / 120   //frame-rate
-            ,  10       //velocity iterations
-            ,  10       //position iterations
+               1 / 60   //frame-rate
+            ,  8       //velocity iterations
+            ,  3       //position iterations
          );
+
          world.DrawDebugData();
          world.ClearForces();
       };
