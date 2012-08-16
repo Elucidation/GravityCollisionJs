@@ -36,7 +36,8 @@
       
       var G = 1;
       var N = 50;
-      var DISTANCE_FACTOR = 1.5; // gravitational distance factor, 2 is reality, less means gravity is stronger further away (don't set to 0)
+      var DISTANCE_FACTOR = 1.2; // gravitational distance factor, 2 is reality, less means gravity is stronger further away (don't set to 0)
+      var initVel = 2; // Initial rand velocity for bodies
       var bods = [];
       var ctx = document.getElementById("canvas");
 
@@ -60,38 +61,40 @@
       // Walls
       ////////////////////////////////////
       bodyDef.type = b2Body.b2_staticBody;
-      var halfWallThick = 0.5;
+      var halfWallThick = 5;
       var cWidth = ctx.width / SCALE;
       var cHeight = ctx.height / SCALE;
+
+      var OutsideOffset = 10;
 
       console.log("w/h = "+cWidth+", "+cHeight);
 
       // Bottom
       bodyDef.position.x = cWidth/2;
-      bodyDef.position.y = cHeight;
+      bodyDef.position.y = cHeight+OutsideOffset;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(cWidth/2, halfWallThick);
+      fixDef.shape.SetAsBox(cWidth/2+OutsideOffset, halfWallThick);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
 
       // Top
       bodyDef.position.x = cWidth/2;
-      bodyDef.position.y = 0;
+      bodyDef.position.y = 0 - OutsideOffset;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(cWidth/2, halfWallThick);
+      fixDef.shape.SetAsBox(cWidth/2+OutsideOffset, halfWallThick);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
 
       // Left
-      bodyDef.position.x = 0;
+      bodyDef.position.x = 0 - OutsideOffset;
       bodyDef.position.y = cHeight/2;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(halfWallThick, cHeight/2);
+      fixDef.shape.SetAsBox(halfWallThick, cHeight/2+OutsideOffset);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
 
       // Right
-      bodyDef.position.x = cWidth;
+      bodyDef.position.x = cWidth + OutsideOffset;
       bodyDef.position.y = cHeight/2;
       fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(halfWallThick, cHeight/2);
+      fixDef.shape.SetAsBox(halfWallThick, cHeight/2+OutsideOffset);
       world.CreateBody(bodyDef).CreateFixture(fixDef);
       
       //create some objects
@@ -119,7 +122,6 @@
          bodyDef.position.y = halfWallThick + s + (Math.random()*cHeight-2*(halfWallThick+s) );
          var wb = world.CreateBody(bodyDef).CreateFixture(fixDef);
          var xvel,yvel;
-         var initVel = 0;
          if (wb.GetBody().GetPosition().x > 10) {
             xvel = (Math.random()-0.5)*initVel;
             yvel = -Math.random()*initVel;
@@ -131,6 +133,17 @@
                                           y: yvel    });
          bods.push( wb.GetBody() );
       }
+
+      // Create center planet
+
+      fixDef.shape = new b2CircleShape( 5 );
+      bodyDef.position.x = cWidth/2;
+      bodyDef.position.y = cHeight/2;
+      bodyDef.type = b2Body.b2_staticBody;
+      var wb = world.CreateBody(bodyDef).CreateFixture(fixDef);
+      bods.push( wb.GetBody() );
+
+      console.log(wb.GetBody().GetMass());
 
 
       // Mouse  
@@ -203,9 +216,8 @@
 
          return {x: x, y: y};
       };
- 
 
-      function doForces() {
+      function doForces() {      
          for (var i = bods.length - 1; i >= 0; i--) {
             for (var j = i-1; j >= 0; j--) 
                { doForce(bods[i],bods[j]); }
@@ -216,10 +228,12 @@
          var x = b1.GetPosition().x;
          var y = b1.GetPosition().y;
          var m = b1.GetMass(); 
+         if (m == 0) { m = 5;}
          
          var x2 = b2.GetPosition().x;
          var y2 = b2.GetPosition().y;
          var m2 = b2.GetMass();
+         if (m2 == 0) { m2 = 5;}
 
          var dx = x2-x;
          var dy = y2-y;
@@ -260,7 +274,7 @@
                md.bodyB = body;
                md.target.Set(mouseX, mouseY);
                md.collideConnected = true;
-               md.maxForce = MOUSE_PULL_FORCE;// * body.GetMass();
+               md.maxForce = MOUSE_PULL_FORCE * body.GetMass();
                mouseJoint = world.CreateJoint(md);
                body.SetAwake(true);
             }
