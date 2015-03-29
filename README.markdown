@@ -2,4 +2,4 @@ Interaction between N objects due to gravitational interactions with collision d
 
 ![Screenshot](http://i.imgur.com/O9pKs.png)
 
-Try it live [here](http://www.prism.gatech.edu/~gth716h/GravityCollision/)
+Try it live [here](http://www.andrew.cmu.edu/user/sameera/demos/GravityCollisionJs/)
